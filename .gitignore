@@ -1,0 +1,8 @@
+tools/
+keys/
+build/
+*.jks
+*.keystore
+password.txt
+*.png
+*.json
