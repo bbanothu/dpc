@@ -27,7 +27,7 @@ if [[ -z $SUM ]]; then
     openssl pkcs7 -inform DER -in "$tmp/sig" -print_certs | openssl x509 -outform DER > "$tmp/cert.der"
     hex=$(sha256sum "$tmp/cert.der" | cut -d' ' -f1)
   fi
-  SUM=$(echo -n "$hex" | xxd -r -p | base64 | tr '+/' '-_' | tr -d '=\n')
+  SUM=$(python3 -c 'import sys,base64;print(base64.urlsafe_b64encode(bytes.fromhex(sys.argv[1])).decode().rstrip("="))' "$hex")
 fi
 
 json=$(python3 - "$COMP" "$URL" "$SUM" "$EXTRAS" <<'PY'
