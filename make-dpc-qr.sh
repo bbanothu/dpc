@@ -31,7 +31,7 @@ if [[ -z $SUM ]]; then
     openssl pkcs7 -inform DER -in "$tmp/sig" -print_certs | openssl x509 -outform DER > "$tmp/cert.der"
     hex=$(sha256sum "$tmp/cert.der" | cut -d' ' -f1)
   fi
-  SUM=$(python3 -c 'import sys,base64;print(base64.urlsafe_b64encode(bytes.fromhex(sys.argv[1])).decode().rstrip("="))' "$hex")
+  SUM=$(python3 -c 'import sys,base64;print(base64.urlsafe_b64encode(bytes.fromhex(sys.argv[1])).decode())' "$hex")
 fi
 
 json=$(python3 - "$COMP" "$URL" "$SUM" "$EXTRAS" "$SSID" "$SEC" "$WPASS" "$HIDDEN" <<'PY'
@@ -40,9 +40,9 @@ comp, url, csum, extras, ssid, sec, wpass, hidden = sys.argv[1:]
 p = "android.app.extra.PROVISIONING_"
 d = {p+"DEVICE_ADMIN_COMPONENT_NAME": comp,
      p+"DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION": url,
-     p+"DEVICE_ADMIN_SIGNATURE_CHECKSUM": csum,
-     p+"LEAVE_ALL_SYSTEM_APPS_ENABLED": True,
-     p+"SKIP_ENCRYPTION": False}
+     p+"DEVICE_ADMIN_SIGNATURE_CHECKSUM": csum + "=" * (-len(csum) % 4)}
+if "/." in comp: comp = comp.replace("/.", "/" + comp.split("/")[0] + ".", 1)
+d[p+"DEVICE_ADMIN_COMPONENT_NAME"] = comp
 if extras: d[p+"ADMIN_EXTRAS_BUNDLE"] = json.loads(extras)
 if ssid:
     d[p+"WIFI_SSID"] = ssid
@@ -53,6 +53,6 @@ print(json.dumps(d, separators=(",", ":")))
 PY
 )
 echo "$json" > "${OUT%.png}.json"
-qrencode -o "$OUT" -s 8 -m 4 -l M "$json"
-qrencode -t ANSIUTF8 -l M "$json"
+qrencode -o "$OUT" -s 10 -m 4 -l L "$json"
+qrencode -t ANSIUTF8 -l L "$json"
 echo "Wrote $OUT and ${OUT%.png}.json"
